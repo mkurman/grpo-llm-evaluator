@@ -61,24 +61,34 @@ The primary goal of this project is to fine-tune a student LLM using feedback fr
 
 ## Configuration Details
 
-The `TrainingConfig` dataclass in `config.py` defines the available configuration parameters. Here's a brief overview:
+The training process is configured using the `TrainingConfig` dataclass in `config.py` defines the available configuration parameters. Here's a brief overview:
 
--   `openai_base_url`: URL for the vLLM API.
--   `student_model_name`: Name of the student model.
--   `teacher_model_name`: Name of the teacher model.
--   `dataset_name`: Name of the dataset.
--   `output_dir`: Directory to save the training outputs.
--   `save_steps`: Number of steps between saving model checkpoints.
--   `learning_rate`: Learning rate for the optimizer.
--   `max_new_tokens`: Maximum number of tokens to generate.
--   `num_return_sequences`: Number of responses to generate for each input.
--   `temperature`: Sampling temperature.
--   `top_p`: Top-p sampling parameter.
--   `top_k`: Top-k sampling parameter.
--   `max_seq_length`: Maximum sequence length.
--   `cache_dir`: Directory to cache the models and datasets.
--   `grpo_beta`: Beta parameter for GRPO loss.
--   `sft_beta`: Beta parameter for SFT loss. Strongly recommended to experiment with this parameter. Make it higher if your evaluation model is very good.
+| Attribute             | Description                               | Type    | Default Value                      |
+| --------------------- | ----------------------------------------- | ------- | ---------------------------------- |
+| `openai_base_url`     | Base URL for the OpenAI API.              | str     | `"http://localhost/v1/"`           |
+| `student_model_name`  | Name or path of the student model.        | str     | `"mkurman/Llama-3.2-MedIT-SUN-2.5B-BT-GRPO"` |
+| `teacher_model_name`  | Name or path of the teacher model.        | str     | `"mkurman/Qwen2.5-14B-DeepSeek-R1-1M"` |
+| `dataset_name`        | Name of the dataset to use.               | str     | `"open-r1/OpenR1-Math-220k"`      |
+| `output_dir`          | Directory to save the training outputs.   | str     | `"~/.models/"`                     |
+| `save_steps`          | Number of steps between each save.        | int     | `50`                               |
+| `learning_rate`       | Learning rate for the optimizer.          | float   | `5e-7`                             |
+| `max_new_tokens`      | Maximum number of new tokens to generate. | int     | `4096`                             |
+| `num_return_sequences`| Number of sequences to return.            | int     | `1`                                |
+| `accumulation_steps`  | Number of accumulation steps.             | int     | `1`                                |
+| `temperature`         | Temperature for sampling.                 | float   | `0.7`                              |
+| `top_p`               | Top p value for sampling.                 | float   | `0.9`                              |
+| `top_k`               | Top k value for sampling.                 | int     | `50`                               |
+| `max_seq_length`      | Maximum sequence length.                  | int     | `4096`                             |
+| `cache_dir`           | Directory to cache models/datasets.       | str     | `"~/.cache/"`                      |
+| `warmup_steps`        | Number of warmup steps.                   | int     | `100`                              |
+| `total_steps`         | Total number of training steps.           | int     | `1000`                             |
+| `seed`                | Random seed.                              | int     | `3409`                             |
+| `max_grad_norm`       | Maximum gradient norm.                      | float   | `0.1`                              |
+| `grpo_beta`           | Beta value for GRPO loss.                 | float   | `0.05`                             |
+| `sft_beta`            | Beta value for SFT loss.                  | float   | `0.05`                             |
+| `thought_process_weight`| Weight for thought process score.       | float   | `0.07`                             |
+| `answer_weight`       | Weight for answer score.                  | float   | `0.1`                              |
+| `format_weight`         | Weight for format score.                  | float   | `0.03`                             |
 
 ## Contributing
 

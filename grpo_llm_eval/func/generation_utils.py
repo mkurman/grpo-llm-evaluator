@@ -1,10 +1,27 @@
 from unsloth import FastLanguageModel
 
+
 def generate_response(student_model, tokenizer, input_text, config):
+    """
+    Generates a response from the student model given an input text.
+
+    Args:
+        student_model: The student model to use for generating the response.
+        tokenizer: The tokenizer to use for encoding and decoding text.
+        input_text (str): The input text to generate a response for.
+        config: The configuration object containing hyperparameters.
+
+    Returns:
+        list: A list of generated responses.
+    """
     prompt = [{"role": "user", "content": input_text}]
     prompt = tokenizer.apply_chat_template(
-            prompt, tokenize=False, add_generation_prompt=True, padding=True, truncation=True
-        )
+        prompt,
+        tokenize=False,
+        add_generation_prompt=True,
+        padding=True,
+        truncation=True,
+    )
     inputs = tokenizer(
         prompt,
         return_tensors="pt",
@@ -26,8 +43,8 @@ def generate_response(student_model, tokenizer, input_text, config):
     )
     outputs = outputs.to("cpu")
     inputs = inputs.to("cpu")
-    
-    outputs = outputs[:, inputs.input_ids.shape[1]:]
+
+    outputs = outputs[:, inputs.input_ids.shape[1] :]
 
     responses = []
     for output in outputs:

@@ -19,3 +19,6 @@ max_grad_norm: 0.1
 grpo_beta: 0.05
 sft_beta: 0.05
 seed: 42
+thought_process_weight: 1.0
+answer_weight: 1.0
+format_weight: 1.0
