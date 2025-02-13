@@ -2,6 +2,8 @@
 
 This project implements a Grouped Relative Policy Optimization (GRPO) based LLM evaluator, with an option for supervised fine-tuning (SFT) on evaluation feedback. It leverages the `unsloth` library for efficient model training and inference.
 
+![GRPO LLM Evaluator](image.jpeg)
+
 ## Overview
 
 The primary goal of this project is to fine-tune a student LLM using feedback from a teacher LLM. The GRPO method is used to optimize the student model's policy based on the rewards derived from the teacher's feedback. Additionally, the project supports SFT to further refine the student model using the teacher's feedback as training data.
