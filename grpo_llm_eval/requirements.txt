@@ -1,7 +1,0 @@
-transformers
-vllm
-torch
-datasets
-numpy
-pandas
-scikit-learn
