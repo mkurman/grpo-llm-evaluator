@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import List
+from typing import Optional
 import os
 
 
@@ -57,6 +57,8 @@ class TrainingConfig:
     """Weight for the answer score in the reward."""
     format_weight: float = 0.03
     """Weight for the format score in the reward."""
+    system_prompt: Optional[str] = None
+    """System prompt to use for generation."""
 
     def __post_init__(self):
         # Validate openai_base_url

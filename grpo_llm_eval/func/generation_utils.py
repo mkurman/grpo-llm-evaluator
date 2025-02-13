@@ -15,6 +15,11 @@ def generate_response(student_model, tokenizer, input_text, config):
         list: A list of generated responses.
     """
     prompt = [{"role": "user", "content": input_text}]
+
+    if config.system_prompt is not None:
+        system_prompt = [{"role": "system", "content": config.system_prompt}]
+        prompt.insert(0, system_prompt)
+
     prompt = tokenizer.apply_chat_template(
         prompt,
         tokenize=False,
