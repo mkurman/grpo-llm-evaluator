@@ -2,6 +2,9 @@ import re
 import asyncio
 import os
 from openai import AsyncOpenAI
+from logging import getLogger
+
+logger = getLogger(__name__)
 
 async def evaluate_response(teacher_model_name, student_responses, ground_truth, config):
     client = AsyncOpenAI(api_key=os.environ.get("OPENAI_API_KEY"), base_url=config.openai_base_url)
@@ -44,7 +47,7 @@ async def evaluate_response(teacher_model_name, student_responses, ground_truth,
                 return None
             return chat_completion.choices[0].message.content
         except Exception as e:
-            print(f"Error during OpenAI API request: {e}")
+            logger.error(f"Error during OpenAI API request: {e}")
             return None
 
     tasks = [call_openai(prompt) for prompt in prompts]
@@ -73,19 +76,18 @@ def extract_scores(teacher_feedback):
     Extracts the thought and answer scores from the teacher's feedback by using regex.
     """
     if not teacher_feedback:
-        print("Teacher feedback is empty.")
+        logger.debug("Teacher feedback is empty.")
         return 5, 5
 
     # Use a regex to capture everything between <evaluation> and </evaluation>
     eval_pattern = re.compile(r"<evaluation>(.*?)</evaluation>", flags=re.DOTALL)
     match = eval_pattern.search(teacher_feedback)
     if not match:
-        print("Could not find complete <evaluation>...</evaluation> in feedback.")
+        logger.debug("Could not find complete <evaluation>...</evaluation> in feedback.")
         return 5, 0.5, 5
 
     # Extract just the content of the <evaluation> tag
     evaluation_content = match.group(1)
-    print(f"Evaluation content: {evaluation_content}")  # Print the evaluation content
 
     # Regex for <thought_process><score>...</score>
     thought_score_pattern = re.compile(
@@ -111,20 +113,19 @@ def extract_scores(teacher_feedback):
         # Convert the captured group to int
         thought_score = int(t_match.group(1).strip())
     else:
-        print("Could not find thought_process score.")
+        logger.debug("Could not find thought_process score.")
 
     # Search for answer score
     a_match = answer_score_pattern.search(evaluation_content)
     if a_match:
         answer_score = int(a_match.group(1).strip())
     else:
-        print("Could not find answer score.")
+        logger.debug("Could not find answer score.")
 
     s_match = style_score_pattern.search(evaluation_content)
     if s_match:
         style_score = int(s_match.group(1).strip())
     else:
-        print("Could not find format score.")
+        logger.debug("Could not find format score.")
 
-    print(f"Thought score: {thought_score / 10}, Answer score: {answer_score / 10}, Style score: {style_score / 10}")
     return thought_score, answer_score, style_score

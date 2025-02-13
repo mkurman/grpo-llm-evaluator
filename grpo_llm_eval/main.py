@@ -17,6 +17,9 @@ from grpo_llm_eval.func.evaluation_utils import evaluate_response
 from grpo_llm_eval.func.trl_utils import combine_and_train
 from grpo_llm_eval.func.config_utils import load_config
 from grpo_llm_eval.args import parse_args
+from logging import getLogger
+
+logger = getLogger(__name__)
 
 async def main():
     args = parse_args()
@@ -43,7 +46,7 @@ async def main():
         student_model, ref_model, optimizer, dataset, scheduler
     )
 
-    print("Starting training loop...")
+    logger.debug("Starting training loop...")
 
     step_bar = tqdm(range(len(dataset)), total=config.total_steps, desc="Training", position=0)
     student_model.train()
@@ -104,13 +107,13 @@ async def main():
             # Workaround to fix the dtype of the model (unsloth issue)
             student_model.config.torch_dtype = student_dtype
 
-            print(f"Model saved to {path}")
+            logger.debug(f"Model saved to {path}")
 
             # Delete previous checkpoints
             if i > config.save_steps:
                 prev_path = os.path.join(output_dir, f"checkpoint-{i-config.save_steps}")
                 os.system(f"rm -rf {prev_path}")
-                print(f"Deleted checkpoint {prev_path}")
+                logger.debug(f"Deleted checkpoint {prev_path}")
 
         step_bar.update()
 
@@ -121,4 +124,4 @@ def run_main():
     try:
         asyncio.run(main(), debug=True)
     except Exception as e:
-        print(f"An error occurred: {e}")
+        logger.error(f"An error occurred: {e}")
