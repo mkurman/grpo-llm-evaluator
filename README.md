@@ -1,6 +1,6 @@
 # GRPO LLM Evaluator
 
-This project implements a Grouped Relative Policy Optimization (GRPO) based LLM evaluator, with an option for supervised fine-tuning (SFT) on evaluation feedback. It leverages the `unsloth` library for efficient model training and inference.
+This project implements a Group Relative Policy Optimization (GRPO) based LLM evaluator, with an option for supervised fine-tuning (SFT) on evaluation feedback. It leverages the `unsloth` library for efficient model training and inference.
 
 ![GRPO LLM Evaluator @ Imagen 3](image.jpeg)
 
