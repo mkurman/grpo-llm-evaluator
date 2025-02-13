@@ -1,0 +1,29 @@
+[project]
+name = "grpo_llm_eval"
+version = "0.1.0"
+description = "GRPO LLM Evaluator with SFT on evaluation data"
+authors = [
+    { name = "Mariusz Kurman", email = "mariusz.kurman@gmail.com" }
+]
+dependencies = [
+    "accelerate",
+    "transformers",
+    "torch",
+    "pyyaml",
+    "unsloth",
+    "datasets",
+    "peft",
+    "bitsandbytes",
+    "trl",
+    "openai",
+]
+
+[project.scripts]
+grpo_llm_eval = "grpo_llm_eval.main:run_main"
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["."]  # includes all packages in the current directory and subdirectories
