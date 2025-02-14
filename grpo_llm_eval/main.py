@@ -1,9 +1,10 @@
 import sys
 import os
+
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
 
 import torch
-from transformers import  get_cosine_schedule_with_warmup
+from transformers import get_cosine_schedule_with_warmup
 import bitsandbytes as bnb
 from datetime import datetime
 from tqdm import tqdm
@@ -18,27 +19,42 @@ from grpo_llm_eval.func.trl_utils import combine_and_train
 from grpo_llm_eval.func.config_utils import load_config
 from grpo_llm_eval.args import parse_args
 from logging import getLogger
+import warnings
+
+warnings.filterwarnings("ignore")
 
 logger = getLogger(__name__)
+
 
 async def main():
     args = parse_args()
     config = load_config(args.config)
-    output_dir = f"{config.output_dir}/{datetime.now().strftime('%Y-%m-%d %H_%M_%S')}"
+    current_date = datetime.now().strftime("%Y-%m-%d %H")
+
+    if current_date not in config.output_dir:
+        config.output_dir = (
+            f"{config.output_dir}/{datetime.now().strftime('%Y-%m-%d %H_%M_%S')}"
+        )
+    else:
+        output_dir = config.output_dir
 
     tokenizer, student_model = load_student_model(config)
     _, ref_model = load_student_model(config, load_in_4bit=True)
 
     dataset = load_dataset_function(config).shuffle(seed=config.seed)
 
-    if 'problem' in dataset.column_names:
-        dataset = dataset.rename_column('problem', 'question')
+    if "problem" in dataset.column_names:
+        dataset = dataset.rename_column("problem", "question")
 
-    teacher_model = load_teacher_model(config) # Now this is just the model name
+    teacher_model = load_teacher_model(config)  # Now this is just the model name
 
     optimizer = bnb.optim.AdamW8bit(student_model.parameters(), lr=config.learning_rate)
 
-    scheduler = get_cosine_schedule_with_warmup(optimizer, num_warmup_steps=config.warmup_steps, num_training_steps=config.total_steps)
+    scheduler = get_cosine_schedule_with_warmup(
+        optimizer,
+        num_warmup_steps=config.warmup_steps,
+        num_training_steps=config.total_steps,
+    )
 
     accelerator = Accelerator()
 
@@ -48,7 +64,9 @@ async def main():
 
     logger.debug("Starting training loop...")
 
-    step_bar = tqdm(range(len(dataset)), total=config.total_steps, desc="Training", position=0)
+    step_bar = tqdm(
+        range(len(dataset)), total=config.total_steps, desc="Training", position=0
+    )
     student_model.train()
 
     for i in step_bar:
@@ -70,17 +88,19 @@ async def main():
             dataset["question"][index],
             student_responses,
             output_dir,
-            config
+            config,
         )
 
         loss = policy_loss + sft_loss * config.sft_beta
-        
+
         loss.backward()
 
         # Gradient clipping
         torch.nn.utils.clip_grad_norm_(student_model.parameters(), config.max_grad_norm)
 
-        if config.accumulation_steps == 1 or (i % config.accumulation_steps == 0 and i > 0):
+        if config.accumulation_steps == 1 or (
+            i % config.accumulation_steps == 0 and i > 0
+        ):
             optimizer.step()
             scheduler.step()
             optimizer.zero_grad()
@@ -92,7 +112,7 @@ async def main():
             advantage=advantage,
             policy_loss=policy_loss.item(),
             sft_loss=sft_loss.item(),
-            lr=scheduler.get_last_lr()[0]
+            lr=scheduler.get_last_lr()[0],
         )
 
         if i % config.save_steps == 0 and i > 0:
@@ -100,9 +120,9 @@ async def main():
 
             path = os.path.join(output_dir, f"checkpoint-{i}")
             accelerator.unwrap_model(student_model).save_pretrained(
-                    path, state_dict=student_model.state_dict(), safe_serialization=True
-                )
-            
+                path, state_dict=student_model.state_dict(), safe_serialization=True
+            )
+
             student_model = accelerator.prepare(student_model)
 
             # Workaround to fix the dtype of the model (unsloth issue)
@@ -112,14 +132,18 @@ async def main():
 
             # Delete previous checkpoints
             if i > config.save_steps:
-                prev_path = os.path.join(output_dir, f"checkpoint-{i-config.save_steps}")
+                prev_path = os.path.join(
+                    output_dir, f"checkpoint-{i-config.save_steps}"
+                )
                 os.system(f"rm -rf {prev_path}")
                 logger.debug(f"Deleted checkpoint {prev_path}")
 
         step_bar.update()
 
+
 if __name__ == "__main__":
     pass
+
 
 def run_main():
     try:

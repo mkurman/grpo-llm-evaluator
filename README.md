@@ -59,6 +59,29 @@ The primary goal of this project is to fine-tune a student LLM using feedback fr
     grpo_llm_eval --config configs/example.yaml
     ```
 
+5.  **Use the Graphical Interface:**
+
+    ```bash
+    grpo_llm_eval_ui
+    ```
+
+    The Gradio interface provides:
+    - Easy configuration of all training parameters
+    - Real-time training progress monitoring
+    - Live display of training results
+    - Interactive data exploration
+    - Configuration loading/saving capabilities
+
+    The interface consists of:
+    - A sidebar with all configuration parameters
+    - A main panel showing:
+        - Training progress and logs
+        - Results in a searchable, sortable table
+        - Export options for training data
+
+    The interface is accessible at `http://localhost:7860` by default.
+    ![Gradio Interface](image_gradio.png)
+
 ## Configuration Details
 
 The training process is configured using the `TrainingConfig` dataclass in `config.py` defines the available configuration parameters. Here's a brief overview:

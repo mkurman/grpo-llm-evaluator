@@ -16,10 +16,12 @@ dependencies = [
     "bitsandbytes",
     "trl",
     "openai",
+    "gradio",
 ]
 
 [project.scripts]
 grpo_llm_eval = "grpo_llm_eval.main:run_main"
+grpo_llm_eval_ui = "grpo_llm_eval.app.gradio:run_ui"  # Added new script entry
 
 [build-system]
 requires = ["setuptools>=61.0"]
