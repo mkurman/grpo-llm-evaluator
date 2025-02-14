@@ -1,15 +1,32 @@
 import re
 import asyncio
 import os
-from openai import AsyncOpenAI
+import json
+import aiohttp
 from logging import getLogger
 
 logger = getLogger(__name__)
 
-async def evaluate_response(teacher_model_name, student_responses, ground_truth, config):
-    client = AsyncOpenAI(api_key=os.environ.get("OPENAI_API_KEY"), base_url=config.openai_base_url)
+
+async def evaluate_response(
+    teacher_model_name, student_responses, ground_truth, config
+):
+    """
+    Evaluates the student responses using the teacher model.
+
+    Args:
+        teacher_model_name (str): The name of the teacher model to use for evaluation.
+        student_responses (list): A list of student responses to evaluate.
+        ground_truth (str): The ground truth response to compare the student responses to.
+        config: The configuration object containing hyperparameters.
+    
+    Returns:
+        list: A list of teacher evaluations for the student responses.
+    """
 
     prompts = []
+
+    openai_key = os.environ.get("OPENAI_API_KEY")
 
     for student_response in student_responses:
         evaluation_prompt = (
@@ -29,23 +46,42 @@ async def evaluate_response(teacher_model_name, student_responses, ground_truth,
             f"Ground Truth:\n{ground_truth}\n\n"
         )
 
-        prompts.append([{
-            'role': 'user', 'content': evaluation_prompt}])
+        prompts.append([{"role": "user", "content": evaluation_prompt}])
 
     teacher_outputs = []
 
     async def call_openai(prompt):
+        url = os.path.join(config.openai_base_url, 'chat', 'completions')
+        headers = {
+            "Authorization": f"Bearer {openai_key}",
+            "Content-Type": "application/json",
+        }
+        payload = {
+            "model": teacher_model_name,
+            "messages": prompt,
+            "max_tokens": config.max_feedback_new_tokens,
+            "temperature": config.temperature,
+            "top_p": config.top_p,
+            "include_reasoning": True,
+        }
         try:
-            chat_completion = await client.chat.completions.create(
-                messages=prompt,
-                model=teacher_model_name,
-                max_tokens=config.max_new_tokens,
-                temperature=config.temperature,
-                top_p=config.top_p,
-            )
-            if chat_completion is None:
-                return None
-            return chat_completion.choices[0].message.content
+            async with aiohttp.ClientSession() as session:
+                async with session.post(
+                    url, headers=headers, data=json.dumps(payload)
+                ) as response:
+                    if response.status == 200:
+                        data = await response.json()
+                        content = ''
+
+                        if 'reasoning' in data['choices'][0]['message']:
+                            content = f"<think>\n{data['choices'][0]['message']['reasoning'].strip()}\n</think>\n"
+
+                        return f"{content}{data["choices"][0]["message"]["content"]}".strip()
+                    else:
+                        logger.error(
+                            f"OpenAI API request failed with status: {response.status}"
+                        )
+                        return None
         except Exception as e:
             logger.error(f"Error during OpenAI API request: {e}")
             return None
@@ -61,9 +97,11 @@ async def evaluate_response(teacher_model_name, student_responses, ground_truth,
 
     for i, teacher_output in enumerate(teacher_outputs):
         if teacher_output is None:
-            teacher_outputs[i] = "<evaluation><thought_process><score>5</score><explanation>API Error</explanation></thought_process><answer><score>5</score><explanation>API Error</explanation></answer><style><score>5</score><explanation>API Error</explanation></style></evaluation>"
+            teacher_outputs[i] = (
+                "<evaluation><thought_process><score>5</score><explanation>API Error</explanation></thought_process><answer><score>5</score><explanation>API Error</explanation></answer><style><score>5</score><explanation>API Error</explanation></style></evaluation>"
+            )
         else:
-            if '<think>' not in teacher_output:
+            if "<think>" not in teacher_output:
                 teacher_outputs[i] = f"<think>\n{teacher_output.strip()}".strip()
 
             teacher_outputs[i] = teacher_outputs[i].strip()
@@ -83,7 +121,9 @@ def extract_scores(teacher_feedback):
     eval_pattern = re.compile(r"<evaluation>(.*?)</evaluation>", flags=re.DOTALL)
     match = eval_pattern.search(teacher_feedback)
     if not match:
-        logger.debug("Could not find complete <evaluation>...</evaluation> in feedback.")
+        logger.debug(
+            "Could not find complete <evaluation>...</evaluation> in feedback."
+        )
         return 5, 0.5, 5
 
     # Extract just the content of the <evaluation> tag

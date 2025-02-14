@@ -6,6 +6,7 @@ output_dir: "~/.models/"
 save_steps: 50
 learning_rate: 5.0e-07
 max_new_tokens: 2048
+max_feedback_new_tokens: 4096
 num_return_sequences: 2
 accumulation_steps: 1
 temperature: 0.5

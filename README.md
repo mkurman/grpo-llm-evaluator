@@ -73,6 +73,7 @@ The training process is configured using the `TrainingConfig` dataclass in `conf
 | `save_steps`          | Number of steps between each save.        | int     | `50`                               |
 | `learning_rate`       | Learning rate for the optimizer.          | float   | `5e-7`                             |
 | `max_new_tokens`      | Maximum number of new tokens to generate. | int     | `4096`                             |
+| `max_feedback_new_tokens`| Maximum number of new tokens in feedback. | int     | `4096`                             |
 | `num_return_sequences`| Number of sequences to return.            | int     | `1`                                |
 | `accumulation_steps`  | Number of accumulation steps.             | int     | `1`                                |
 | `temperature`         | Temperature for sampling.                 | float   | `0.7`                              |

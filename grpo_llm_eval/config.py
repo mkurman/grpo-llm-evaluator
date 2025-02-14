@@ -25,7 +25,9 @@ class TrainingConfig:
     """Learning rate for the optimizer."""
     max_new_tokens: int = 4096
     """Maximum number of new tokens to generate."""
-    num_return_sequences: int = 1
+    max_feedback_new_tokens: int = 4096
+    """Maximum number of new tokens to generate for feedback."""
+    num_return_sequences: int = 2
     """Number of sequences to return from the generator."""
     accumulation_steps: int = 1
     """Number of accumulation steps."""
@@ -93,13 +95,17 @@ class TrainingConfig:
         # Validate max_new_tokens
         if not isinstance(self.max_new_tokens, int) or self.max_new_tokens <= 0:
             raise ValueError("max_new_tokens must be a positive integer")
+        
+        # Validate max_feedback_new_tokens
+        if not isinstance(self.max_feedback_new_tokens, int) or self.max_feedback_new_tokens <= 0:
+            raise ValueError("max_feedback_new_tokens must be a positive integer")
 
         # Validate num_return_sequences
         if (
             not isinstance(self.num_return_sequences, int)
-            or self.num_return_sequences <= 0
+            or self.num_return_sequences <= 1
         ):
-            raise ValueError("num_return_sequences must be a positive integer")
+            raise ValueError("num_return_sequences must be an integer greater than 1")
 
         # Validate accumulation_steps
         if not isinstance(self.accumulation_steps, int) or self.accumulation_steps <= 0:

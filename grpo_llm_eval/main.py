@@ -80,10 +80,11 @@ async def main():
         # Gradient clipping
         torch.nn.utils.clip_grad_norm_(student_model.parameters(), config.max_grad_norm)
 
-        if i % config.accumulation_steps == 0 and i > 0:
+        if config.accumulation_steps == 1 or (i % config.accumulation_steps == 0 and i > 0):
             optimizer.step()
             scheduler.step()
             optimizer.zero_grad()
+            torch.cuda.empty_cache()
 
         step_bar.set_postfix(
             loss=loss.item(),
