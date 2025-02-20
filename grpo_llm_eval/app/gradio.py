@@ -4,9 +4,65 @@ import yaml
 import subprocess
 import json
 import os
-import pandas as pd  # Add this import
+import pandas as pd
 from glob import glob
 from datetime import datetime
+
+# Add custom CSS for styling
+custom_css = """
+body {
+    font-family: Arial, sans-serif;
+    color: #333;
+}
+
+.gradio-container {
+    margin: 0 auto;
+    padding: 20px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+}
+
+.gr-button {
+    background-color: #007bff;
+    color: #fff;
+    margin: 5px;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.gr-button:hover {
+    background-color: #0056b3;
+}
+
+.gr-button img {
+    margin-right: 8px;
+}
+
+.gr-textbox, .gr-number {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    margin-bottom: 10px;
+}
+
+.gr-markdown {
+    margin-bottom: 20px;
+}
+
+.gr-accordion {
+    margin-bottom: 20px;
+}
+
+.gr-dataframe {
+    margin-top: 20px;
+}
+"""
 
 
 # Function to load the config
@@ -25,6 +81,10 @@ def update_interface_from_config(config_path):
             config.get("student_model_name", default_config.student_model_name),
             config.get("teacher_model_name", default_config.teacher_model_name),
             config.get("dataset_name", default_config.dataset_name),
+            config.get(
+                "dataset_question_column", default_config.dataset_question_column
+            ),
+            config.get("dataset_answer_column", default_config.dataset_answer_column),
             config.get("output_dir", default_config.output_dir),
             config.get("save_steps", default_config.save_steps),
             config.get("learning_rate", default_config.learning_rate),
@@ -48,6 +108,10 @@ def update_interface_from_config(config_path):
             config.get("thought_process_weight", default_config.thought_process_weight),
             config.get("answer_weight", default_config.answer_weight),
             config.get("format_weight", default_config.format_weight),
+            config.get("system_prompt", default_config.system_prompt),
+            config.get("evaluation_prompt", default_config.evaluation_prompt),
+            config.get("think_open_string", default_config.think_open_string),
+            config.get("think_close_string", default_config.think_close_string),
         ]
     except Exception as e:
         raise gr.Error(f"Error loading config: {str(e)}")
@@ -62,26 +126,32 @@ def run_training(*args, progress=gr.Progress()):
         "student_model_name": args[2],
         "teacher_model_name": args[3],
         "dataset_name": args[4],
-        "save_steps": args[5],
-        "learning_rate": args[6],
-        "max_new_tokens": args[7],
-        "max_feedback_new_tokens": args[8],
-        "num_return_sequences": args[9],
-        "accumulation_steps": args[10],
-        "temperature": args[11],
-        "top_p": args[12],
-        "top_k": args[13],
-        "max_seq_length": args[14],
-        "cache_dir": args[15],
-        "warmup_steps": args[16],
-        "total_steps": args[17],
-        "seed": args[18],
-        "max_grad_norm": args[19],
-        "grpo_beta": args[20],
-        "sft_beta": args[21],
-        "thought_process_weight": args[22],
-        "answer_weight": args[23],
-        "format_weight": args[24],
+        "dataset_question_column": args[5],
+        "dataset_answer_column": args[6],
+        "save_steps": args[7],
+        "learning_rate": args[8],
+        "max_new_tokens": args[9],
+        "max_feedback_new_tokens": args[10],
+        "num_return_sequences": args[11],
+        "accumulation_steps": args[12],
+        "temperature": args[13],
+        "top_p": args[14],
+        "top_k": args[15],
+        "max_seq_length": args[16],
+        "cache_dir": args[17],
+        "warmup_steps": args[18],
+        "total_steps": args[19],
+        "seed": args[20],
+        "max_grad_norm": args[21],
+        "grpo_beta": args[22],
+        "sft_beta": args[23],
+        "thought_process_weight": args[24],
+        "answer_weight": args[25],
+        "format_weight": args[26],
+        "system_prompt": args[27],
+        "evaluation_prompt": args[28],
+        "think_open_string": args[29],
+        "think_close_string": args[30],
     }
 
     output_dir = (
@@ -162,6 +232,7 @@ def display_data(data_file):
         df.style.set_properties(**{"vertical-align": "text-top"})
         if df.empty:
             return pd.DataFrame({"error": ["No data found in results file"]})
+        # Set proper DataFrame columns
         return df
     except FileNotFoundError:
         return pd.DataFrame(
@@ -178,19 +249,16 @@ def display_data(data_file):
 default_config = TrainingConfig()
 
 # Create the Gradio interface
-with gr.Blocks() as iface:
+with gr.Blocks(css=custom_css) as iface:
     gr.Markdown("# GRPO LLM Evaluator Training Interface")
     with gr.Row():
         with gr.Column(scale=1, variant="panel"):
             gr.Markdown("### Configuration")
+            config_path = gr.Textbox(label="Load from", value="configs/example.yaml")
+            load_button = gr.Button("Load Configuration", variant="secondary")
 
             # Config file controls
             with gr.Group():
-                gr.Markdown("#### Load/Save Config")
-                config_path = gr.Textbox(
-                    label="Load from", value="configs/example.yaml"
-                )
-                load_button = gr.Button("Load Configuration")
 
                 # Configuration parameters
                 with gr.Accordion("Settings", open=True):
@@ -207,6 +275,14 @@ with gr.Blocks() as iface:
                     )
                     dataset_name = gr.Textbox(
                         label="Dataset Name", value=default_config.dataset_name
+                    )
+                    dataset_question_column = gr.Textbox(
+                        label="Dataset Question Column",
+                        value=default_config.dataset_question_column,
+                    )
+                    dataset_answer_column = gr.Textbox(
+                        label="Dataset Answer Column",
+                        value=default_config.dataset_answer_column,
                     )
                     output_dir = gr.Textbox(
                         label="Output Directory", value=default_config.output_dir
@@ -269,6 +345,21 @@ with gr.Blocks() as iface:
                     format_weight = gr.Number(
                         label="Format Weight", value=default_config.format_weight
                     )
+                    system_prompt = gr.Textbox(
+                        label="System Prompt", value=default_config.system_prompt
+                    )
+                    evaluation_prompt = gr.Textbox(
+                        label="Evaluation Prompt",
+                        value=default_config.evaluation_prompt,
+                    )
+                    think_open_string = gr.Textbox(
+                        label="Think Open String",
+                        value=default_config.think_open_string,
+                    )
+                    think_close_string = gr.Textbox(
+                        label="Think Close String",
+                        value=default_config.think_close_string,
+                    )
 
         with gr.Column(scale=3, variant="panel"):
             # Button to run training
@@ -285,6 +376,18 @@ with gr.Blocks() as iface:
                 show_fullscreen_button=True,
                 show_search=True,
                 show_copy_button=True,
+                headers=[
+                    "Question",
+                    "Student Response",
+                    "Teacher Feedback",
+                    "Reward",
+                    "Thought Score",
+                    "Answer Score",
+                    "Style Score",
+                    "Advantage",
+                    "Policy Loss",
+                    "SFT Loss",
+                ],
             )
 
             # Update the run button click handler to include all inputs
@@ -296,6 +399,8 @@ with gr.Blocks() as iface:
                     student_model_name,
                     teacher_model_name,
                     dataset_name,
+                    dataset_question_column,
+                    dataset_answer_column,
                     save_steps,
                     learning_rate,
                     max_new_tokens,
@@ -316,6 +421,10 @@ with gr.Blocks() as iface:
                     thought_process_weight,
                     answer_weight,
                     format_weight,
+                    system_prompt,
+                    evaluation_prompt,
+                    think_open_string,
+                    think_close_string,
                 ],
                 outputs=[training_output, data_output],
                 show_progress=True,
@@ -330,6 +439,8 @@ with gr.Blocks() as iface:
             student_model_name,
             teacher_model_name,
             dataset_name,
+            dataset_question_column,
+            dataset_answer_column,
             output_dir,
             save_steps,
             learning_rate,
@@ -351,6 +462,10 @@ with gr.Blocks() as iface:
             thought_process_weight,
             answer_weight,
             format_weight,
+            system_prompt,
+            evaluation_prompt,
+            think_open_string,
+            think_close_string,
         ],
     )
 

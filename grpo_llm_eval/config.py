@@ -17,6 +17,10 @@ class TrainingConfig:
     """Name or path of the teacher model."""
     dataset_name: str = "open-r1/OpenR1-Math-220k"
     """Name of the dataset to use."""
+    dataset_question_column: str = "question"
+    """Column name for the questions in the dataset."""
+    dataset_answer_column: str = "answer"
+    """Column name for the answers in the dataset."""
     output_dir: str = "~/.models/"
     """Directory to save the training outputs."""
     save_steps: int = 50
@@ -59,8 +63,22 @@ class TrainingConfig:
     """Weight for the answer score in the reward."""
     format_weight: float = 0.03
     """Weight for the format score in the reward."""
-    system_prompt: Optional[str] = None
+
+    system_prompt: Optional[str] = (
+        "Respond in the following format:\n<think>\n...\n</think>\n...\n$\\boxed{answer}$"
+    )
     """System prompt to use for generation."""
+
+    evaluation_prompt: Optional[str] = (
+        "You are a teacher evaluating a student's answer. Evaluate the following student's response in two parts:\n1) Correctness of the thought process (rated from 1 to 10), and\n2) Correctness of the final answer (rated from 1 to 10).\n3) Format and clarity of the response (rated from 1 to 10). Student must have <think> and </think> tags included! If not, give 0 points for this assesment.\n\nThink about the student's thought process and the final answer using <think> ... </think> tags.\nProvide detailed feedback after your thinking process using the following XML format:\n<evaluation>\n  <thought_process><score>{score}</score><explanation>{explanation}</thought_process>\n  <answer><score>{score}</score><explanation>{explanation}</answer>\n  <format><score>{score}</score><explanation>{explanation}</format>\n</evaluation>\n\nStudent Response:\n{student_response}\nGround Truth:\n{ground_truth}\n"
+    )
+
+    """Evaluation prompt to use for the teacher model."""
+
+    think_open_string: str = "<think>"
+    """String to indicate the start of the thought process."""
+    think_close_string: str = "</think>"
+    """String to indicate the end of the thought process."""
 
     def __post_init__(self):
         # Validate openai_base_url
@@ -79,6 +97,14 @@ class TrainingConfig:
         if not isinstance(self.dataset_name, str):
             raise TypeError("dataset_name must be a string")
 
+        # Validate dataset_question_column
+        if not isinstance(self.dataset_question_column, str):
+            raise TypeError("dataset_question_column must be a string")
+
+        # Validate dataset_answer_column
+        if not isinstance(self.dataset_answer_column, str):
+            raise TypeError("dataset_answer_column must be a string")
+
         # Validate output_dir
         if not isinstance(self.output_dir, str):
             raise TypeError("output_dir must be a string")
@@ -95,9 +121,12 @@ class TrainingConfig:
         # Validate max_new_tokens
         if not isinstance(self.max_new_tokens, int) or self.max_new_tokens <= 0:
             raise ValueError("max_new_tokens must be a positive integer")
-        
+
         # Validate max_feedback_new_tokens
-        if not isinstance(self.max_feedback_new_tokens, int) or self.max_feedback_new_tokens <= 0:
+        if (
+            not isinstance(self.max_feedback_new_tokens, int)
+            or self.max_feedback_new_tokens <= 0
+        ):
             raise ValueError("max_feedback_new_tokens must be a positive integer")
 
         # Validate num_return_sequences
@@ -189,3 +218,29 @@ class TrainingConfig:
         # Validate format_weight
         if not isinstance(self.format_weight, float) or self.format_weight < 0:
             raise ValueError("format_weight must be a non-negative float")
+
+        if self.system_prompt is not None and not isinstance(self.system_prompt, str):
+            raise TypeError("system_prompt must be a string")
+
+        if self.evaluation_prompt is not None and not isinstance(
+            self.evaluation_prompt, str
+        ):
+            raise TypeError("evaluation_prompt must be a string")
+
+        if "{student_response}" not in self.evaluation_prompt:
+            raise ValueError("evaluation_prompt must contain {student_response}")
+
+        if "{ground_truth}" not in self.evaluation_prompt:
+            raise ValueError("evaluation_prompt must contain {ground_truth}")
+
+        if not isinstance(self.think_open_string, str):
+            raise TypeError("think_open_string must be a string")
+
+        if not isinstance(self.think_close_string, str):
+            raise TypeError("think_close_string must be a string")
+
+        # Ensure output_dir exists
+        os.makedirs(self.output_dir, exist_ok=True)
+
+        # Ensure cache_dir exists
+        os.makedirs(self.cache_dir, exist_ok=True)

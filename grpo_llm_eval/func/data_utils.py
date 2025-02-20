@@ -15,16 +15,3 @@ def load_dataset_function(config):
         config.dataset_name, split="train", cache_dir=config.cache_dir
     )
     return dataset
-
-
-def apply_chat_template(example):
-    """
-    Applies a chat template to the input example.
-
-    Args:
-        example (dict): A dictionary containing the input example.
-
-    Returns:
-        str: The input example with the chat template applied.
-    """
-    return f"<think>{example['input']}<think>"

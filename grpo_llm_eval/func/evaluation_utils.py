@@ -4,13 +4,17 @@ import os
 import json
 import aiohttp
 from logging import getLogger
+from grpo_llm_eval.config import TrainingConfig
 
 logger = getLogger(__name__)
 
 
 async def evaluate_response(
-    teacher_model_name, student_responses, ground_truth, config
-):
+    teacher_model_name: str,
+    student_responses: list,
+    ground_truth: str,
+    config: TrainingConfig,
+) -> list:
     """
     Evaluates the student responses using the teacher model.
 
@@ -18,8 +22,8 @@ async def evaluate_response(
         teacher_model_name (str): The name of the teacher model to use for evaluation.
         student_responses (list): A list of student responses to evaluate.
         ground_truth (str): The ground truth response to compare the student responses to.
-        config: The configuration object containing hyperparameters.
-    
+        config (Config): The configuration object containing hyperparameters.
+
     Returns:
         list: A list of teacher evaluations for the student responses.
     """
@@ -29,29 +33,17 @@ async def evaluate_response(
     openai_key = os.environ.get("OPENAI_API_KEY")
 
     for student_response in student_responses:
-        evaluation_prompt = (
-            "You are a teacher evaluating a student's answer. "
-            "Evaluate the following student's response in two parts:\n"
-            "1) Correctness of the thought process (rated from 1 to 10), and\n"
-            "2) Correctness of the final answer (rated from 1 to 10).\n"
-            "3) Format and clarity of the response (rated from 1 to 10). Student must have <think> and </think> tags included! If not, give 0 points for this assesment.\n\n"
-            "Think about the student's thought process and the final answer using <think> ... </think> tags.\n"
-            "Provide detailed feedback after your thinking process using the following XML format:\n"
-            "<evaluation>\n"
-            "  <thought_process><score>{score}</score><explanation>{explanation}</thought_process>\n"
-            "  <answer><score>{score}</score><explanation>{explanation}</answer>\n"
-            "  <format><score>{score}</score><explanation>{explanation}</format>\n"
-            "</evaluation>\n\n"
-            f"Student Response:\n{student_response}\n"
-            f"Ground Truth:\n{ground_truth}\n\n"
+        evaluation_prompt = config.evaluation_prompt.replace(
+            "{student_response}", student_response
         )
+        evaluation_prompt = evaluation_prompt.replace("{ground_truth}", ground_truth)
 
         prompts.append([{"role": "user", "content": evaluation_prompt}])
 
     teacher_outputs = []
 
     async def call_openai(prompt):
-        url = os.path.join(config.openai_base_url, 'chat', 'completions')
+        url = os.path.join(config.openai_base_url, "chat", "completions")
         headers = {
             "Authorization": f"Bearer {openai_key}",
             "Content-Type": "application/json",
@@ -71,10 +63,13 @@ async def evaluate_response(
                 ) as response:
                     if response.status == 200:
                         data = await response.json()
-                        content = ''
+                        content = ""
 
-                        if 'reasoning' in data['choices'][0]['message']:
-                            content = f"<think>\n{data['choices'][0]['message']['reasoning'].strip()}\n</think>\n"
+                        if (
+                            "reasoning" in data["choices"][0]["message"]
+                            and data["choices"][0]["message"]["reasoning"] is not None
+                        ):
+                            content = f"{config.think_open_string}\n{data['choices'][0]['message']['reasoning'].strip()}\n{config.think_close_string}\n"
 
                         return f"{content}{data["choices"][0]["message"]["content"]}".strip()
                     else:
@@ -101,8 +96,10 @@ async def evaluate_response(
                 "<evaluation><thought_process><score>5</score><explanation>API Error</explanation></thought_process><answer><score>5</score><explanation>API Error</explanation></answer><style><score>5</score><explanation>API Error</explanation></style></evaluation>"
             )
         else:
-            if "<think>" not in teacher_output:
-                teacher_outputs[i] = f"<think>\n{teacher_output.strip()}".strip()
+            if config.think_open_string not in teacher_output:
+                teacher_outputs[i] = (
+                    f"{config.think_open_string}\n{teacher_output.strip()}".strip()
+                )
 
             teacher_outputs[i] = teacher_outputs[i].strip()
 

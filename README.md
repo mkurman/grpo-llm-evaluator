@@ -97,7 +97,7 @@ The training process is configured using the `TrainingConfig` dataclass in `conf
 | `learning_rate`       | Learning rate for the optimizer.          | float   | `5e-7`                             |
 | `max_new_tokens`      | Maximum number of new tokens to generate. | int     | `4096`                             |
 | `max_feedback_new_tokens`| Maximum number of new tokens in feedback. | int     | `4096`                             |
-| `num_return_sequences`| Number of sequences to return.            | int     | `1`                                |
+| `num_return_sequences`| Number of sequences to return.            | int     | `2`                                |
 | `accumulation_steps`  | Number of accumulation steps.             | int     | `1`                                |
 | `temperature`         | Temperature for sampling.                 | float   | `0.7`                              |
 | `top_p`               | Top p value for sampling.                 | float   | `0.9`                              |
@@ -113,6 +113,10 @@ The training process is configured using the `TrainingConfig` dataclass in `conf
 | `thought_process_weight`| Weight for thought process score.       | float   | `0.07`                             |
 | `answer_weight`       | Weight for answer score.                  | float   | `0.1`                              |
 | `format_weight`         | Weight for format score.                  | float   | `0.03`                             |
+| `system_prompt`       | System prompt to use for generation.      | Optional[str] | `"Respond in the following format:\n<think>\n...\n</think>\n...\n$\\boxed{answer}$"` |
+| `evaluation_prompt`   | Evaluation prompt to use for the teacher model. | Optional[str] | `"You are a teacher evaluating a student's answer. Evaluate the following student's response in two parts:\n1) Correctness of the thought process (rated from 1 to 10), and\n2) Correctness of the final answer (rated from 1 to 10).\n3) Format and clarity of the response (rated from 1 to 10). Student must have <think> and </think> tags included! If not, give 0 points for this assesment.\n\nThink about the student's thought process and the final answer using <think> ... </think> tags.\nProvide detailed feedback after your thinking process using the following XML format:\n<evaluation>\n  <thought_process><score>{score}</score><explanation>{explanation}</thought_process>\n  <answer><score>{score}</score><explanation>{explanation}</answer>\n  <format><score>{score}</score><explanation>{explanation}</format>\n</evaluation>\n\nStudent Response:\n{student_response}\nGround Truth:\n{ground_truth}\n"` |
+| `think_open_string`   | String to indicate the start of the thought process. | str | `"<think>"` |
+| `think_close_string`  | String to indicate the end of the thought process. | str | `"</think>"` |
 
 ## Contributing
 

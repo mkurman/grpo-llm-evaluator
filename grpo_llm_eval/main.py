@@ -43,8 +43,14 @@ async def main():
 
     dataset = load_dataset_function(config).shuffle(seed=config.seed)
 
-    if "problem" in dataset.column_names:
-        dataset = dataset.rename_column("problem", "question")
+    dataset = dataset.rename_columns(
+        {
+            config.dataset_question_column: "question",
+            config.dataset_answer_column: "answer",
+        }
+    )
+
+    print(dataset)
 
     teacher_model = load_teacher_model(config)  # Now this is just the model name
 
