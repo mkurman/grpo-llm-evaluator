@@ -240,6 +240,7 @@ def sft_on_eval(
     teacher_feedbacks,
     original_input,
     original_responses,
+    config,
 ):
     """
     Supervised Fine-Tuning (SFT) on evaluation data.
@@ -250,6 +251,7 @@ def sft_on_eval(
         teacher_feedbacks: The teacher feedbacks.
         original_input: The original input.
         original_responses: The original responses.
+        config: The configuration.
 
     Returns:
         loss: The loss.
@@ -305,7 +307,11 @@ def sft_on_eval(
 
     tokenized_inputs = tokenized_inputs.to(student_model.device)
 
-    student_model = FastLanguageModel.for_training(student_model)
+    if config.use_unsloth:
+        student_model = FastLanguageModel.for_training(student_model)
+    else:
+        student_model = student_model.to(student_model.device)
+        student_model.train()
     loss = student_model(**tokenized_inputs).loss
 
     return loss
@@ -357,6 +363,7 @@ def combine_and_train(
             teacher_feedbacks,
             original_input,
             original_responses,
+            config,
         )
     else:
         sft_loss = torch.tensor(0.0).to(student_model.device)
