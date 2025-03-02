@@ -1,8 +1,10 @@
+use_unsloth: true
+load_in_4bit: true
 openai_base_url: "http://localhost/v1/"
 student_model_name: "mkurman/Llama-3.2-MedIT-SUN-2.5B-BT-GRPO"
 teacher_model_name: "mkurman/Qwen2.5-14B-DeepSeek-R1-1M"
 dataset_name: "open-r1/OpenR1-Math-220k"
-dataset_question_column: "question"
+dataset_question_column: "problem"
 dataset_answer_column: "answer"
 output_dir: "~/.models/"
 save_steps: 50

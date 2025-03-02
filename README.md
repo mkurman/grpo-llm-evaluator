@@ -113,6 +113,8 @@ The training process is configured using the `TrainingConfig` dataclass in `conf
 | `thought_process_weight`| Weight for thought process score.       | float   | `0.07`                             |
 | `answer_weight`       | Weight for answer score.                  | float   | `0.1`                              |
 | `format_weight`         | Weight for format score.                  | float   | `0.03`                             |
+| `use_unsloth`         | Whether to use unsloth for optimizations. | bool    | `True`                             |
+| `load_in_4bit`        | Whether to load model in 4-bit quantization. | bool  | `True`                             |
 | `system_prompt`       | System prompt to use for generation.      | Optional[str] | `"Respond in the following format:\n<think>\n...\n</think>\n...\n$\\boxed{answer}$"` |
 | `evaluation_prompt`   | Evaluation prompt to use for the teacher model. | Optional[str] | `"You are a teacher evaluating a student's answer. Evaluate the following student's response in two parts:\n1) Correctness of the thought process (rated from 1 to 10), and\n2) Correctness of the final answer (rated from 1 to 10).\n3) Format and clarity of the response (rated from 1 to 10). Student must have <think> and </think> tags included! If not, give 0 points for this assesment.\n\nThink about the student's thought process and the final answer using <think> ... </think> tags.\nProvide detailed feedback after your thinking process using the following XML format:\n<evaluation>\n  <thought_process><score>{score}</score><explanation>{explanation}</thought_process>\n  <answer><score>{score}</score><explanation>{explanation}</answer>\n  <format><score>{score}</score><explanation>{explanation}</format>\n</evaluation>\n\nStudent Response:\n{student_response}\nGround Truth:\n{ground_truth}\n"` |
 | `think_open_string`   | String to indicate the start of the thought process. | str | `"<think>"` |
@@ -137,4 +139,3 @@ If you use this code in your research, please consider citing the following pape
   journal = {GitHub repository},
   howpublished = {\url{https://github.com/mkurman/grpo-llm-evaluator}}
 }
-```

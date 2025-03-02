@@ -38,7 +38,9 @@ async def main():
     else:
         output_dir = config.output_dir
 
-    tokenizer, student_model = load_student_model(config)
+    tokenizer, student_model = load_student_model(
+        config, load_in_4bit=config.load_in_4bit
+    )
     _, ref_model = load_student_model(config, load_in_4bit=True)
 
     dataset = load_dataset_function(config).shuffle(seed=config.seed)

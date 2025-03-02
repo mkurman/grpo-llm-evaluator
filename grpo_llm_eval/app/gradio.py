@@ -152,6 +152,8 @@ def run_training(*args, progress=gr.Progress()):
         "evaluation_prompt": args[28],
         "think_open_string": args[29],
         "think_close_string": args[30],
+        "use_unsloth": args[31],
+        "load_in_4bit": args[32],
     }
 
     output_dir = (
@@ -232,7 +234,19 @@ def display_data(data_file):
         df.style.set_properties(**{"vertical-align": "text-top"})
         if df.empty:
             return pd.DataFrame({"error": ["No data found in results file"]})
-        # Set proper DataFrame columns
+        # Set proper DataFrame columns with descriptive names
+        df.columns = [
+            "Question",
+            "Student Response",
+            "Teacher Feedback",
+            "Reward",
+            "Thought Score",
+            "Answer Score",
+            "Style Score",
+            "Advantage",
+            "Policy Loss",
+            "SFT Loss",
+        ]
         return df
     except FileNotFoundError:
         return pd.DataFrame(
@@ -264,6 +278,12 @@ with gr.Blocks(css=custom_css) as iface:
                 with gr.Accordion("Settings", open=True):
                     openai_base_url = gr.Textbox(
                         label="OpenAI Base URL", value=default_config.openai_base_url
+                    )
+                    use_unsloth = gr.Checkbox(
+                        label="Use Unsloth", value=default_config.use_unsloth
+                    )
+                    load_in_4bit = gr.Checkbox(
+                        label="Load in 4-bit", value=default_config.load_in_4bit
                     )
                     student_model_name = gr.Textbox(
                         label="Student Model Name",
@@ -425,6 +445,8 @@ with gr.Blocks(css=custom_css) as iface:
                     evaluation_prompt,
                     think_open_string,
                     think_close_string,
+                    use_unsloth,
+                    load_in_4bit,
                 ],
                 outputs=[training_output, data_output],
                 show_progress=True,

@@ -9,12 +9,16 @@ class TrainingConfig:
     Configuration class for training.
     """
 
+    use_unsloth: bool = True
+    """Whether to use unsloth for fast inference."""
     openai_base_url: str = "http://localhost/v1/"
     """Base URL for the OpenAI API."""
     student_model_name: str = "mkurman/Llama-3.2-MedIT-SUN-2.5B-BT-GRPO"
     """Name or path of the student model."""
     teacher_model_name: str = "mkurman/Qwen2.5-14B-DeepSeek-R1-1M"
     """Name or path of the teacher model."""
+    load_in_4bit: bool = True
+    """Whether to load the model in 4-bit precision."""
     dataset_name: str = "open-r1/OpenR1-Math-220k"
     """Name of the dataset to use."""
     dataset_question_column: str = "question"
