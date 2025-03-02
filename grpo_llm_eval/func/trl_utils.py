@@ -21,7 +21,6 @@ def get_per_token_logps(model, input_ids, attention_mask, logits_to_keep):
         torch.Tensor: The token log probabilities.
     """
 
-
     # We add 1 to `logits_to_keep` because the last logits of the sequence is later excluded
     logits = model(
         input_ids=input_ids,
@@ -162,9 +161,18 @@ def grpo(
 
     tokenized_inputs = tokenized_inputs.to(student_model.device)
 
-    student_model = FastLanguageModel.for_training(student_model)
+    if config.use_unsloth:
+        student_model = FastLanguageModel.for_training(student_model)
+    else:
+        student_model = student_model.to(student_model.device)
+        student_model.train()
 
-    ref_model = FastLanguageModel.for_inference(ref_model)
+    if config.use_unsloth:
+        ref_model = FastLanguageModel.for_inference(ref_model)
+    else:
+        ref_model = ref_model.to(student_model.device)
+        ref_model.eval()
+
     logits_to_keep = inputs.size(1) - np.max(logits_to_keep)
 
     with torch.inference_mode():
