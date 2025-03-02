@@ -10,6 +10,7 @@ from datetime import datetime
 from tqdm import tqdm
 from accelerate import Accelerator
 import asyncio
+import traceback
 
 from grpo_llm_eval.func.model_utils import load_student_model, load_teacher_model
 from grpo_llm_eval.func.data_utils import load_dataset_function
@@ -169,3 +170,4 @@ def run_main():
         asyncio.run(main(), debug=True)
     except Exception as e:
         logger.error(f"An error occurred: {e}")
+        traceback.print_exc()
