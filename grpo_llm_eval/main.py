@@ -127,7 +127,7 @@ async def main():
             optimizer.zero_grad()
             torch.cuda.empty_cache()
 
-            step_bar.update(current_step + 1)
+            step_bar.update(1)
 
         step_bar.set_postfix(
             loss=loss.item(),
