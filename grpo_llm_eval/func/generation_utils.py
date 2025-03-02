@@ -33,7 +33,8 @@ def generate_response(student_model, tokenizer, input_text, config):
     )
     inputs = inputs.to("cuda")
 
-    student_model = FastLanguageModel.for_inference(student_model)
+    if config.use_unsloth:
+        student_model = FastLanguageModel.for_inference(student_model)
     # streamer = TextStreamer(tokenizer=tokenizer)
     outputs = student_model.generate(
         **inputs,
