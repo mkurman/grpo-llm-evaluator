@@ -70,12 +70,15 @@ async def main():
 
     logger.debug("Starting training loop...")
 
-    step_bar = tqdm(
-        range(len(dataset)), total=config.total_steps, desc="Training", position=0
-    )
+    total_steps = config.total_steps * config.accumulation_steps
+
+    step_bar = tqdm(range(total_steps), total=total_steps, desc="Training", position=0)
+
+    step_bar.update(1)
+
     student_model.train()
 
-    for i in step_bar:
+    for i in range(total_steps):
         # Get data from dataset
         index = i % len(dataset)
         student_responses = generate_response(
@@ -112,6 +115,8 @@ async def main():
             optimizer.zero_grad()
             torch.cuda.empty_cache()
 
+            step_bar.update(int(i / config.accumulation_steps) + 1)
+
         step_bar.set_postfix(
             loss=loss.item(),
             reward=reward,
@@ -121,7 +126,7 @@ async def main():
             lr=scheduler.get_last_lr()[0],
         )
 
-        if i % config.save_steps == 0 and i > 0:
+        if i / config.accumulation_steps % config.save_steps == 0 and i > 0:
             student_dtype = student_model.config.torch_dtype
 
             path = os.path.join(output_dir, f"checkpoint-{i}")
@@ -137,14 +142,18 @@ async def main():
             logger.debug(f"Model saved to {path}")
 
             # Delete previous checkpoints
-            if i > config.save_steps:
+            if i / config.accumulation_steps > config.save_steps:
                 prev_path = os.path.join(
                     output_dir, f"checkpoint-{i-config.save_steps}"
                 )
                 os.system(f"rm -rf {prev_path}")
                 logger.debug(f"Deleted checkpoint {prev_path}")
 
-        step_bar.update()
+        if i / config.accumulation_steps % config.total_steps == 0 and i > 0:
+            student_model.save_pretrained(os.path.join(output_dir, "final"))
+            logger.debug(f"Final model saved to {os.path.join(output_dir, 'final')}")
+            step_bar.update()
+            break
 
 
 if __name__ == "__main__":
