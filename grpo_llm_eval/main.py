@@ -131,7 +131,7 @@ async def main():
         if i / config.accumulation_steps % config.save_steps == 0 and i > 0:
             student_dtype = student_model.config.torch_dtype
 
-            path = os.path.join(output_dir, f"checkpoint-{i}")
+            path = os.path.join(config.output_dir, f"checkpoint-{i}")
             accelerator.unwrap_model(student_model).save_pretrained(
                 path, state_dict=student_model.state_dict(), safe_serialization=True
             )
@@ -146,14 +146,16 @@ async def main():
             # Delete previous checkpoints
             if i / config.accumulation_steps > config.save_steps:
                 prev_path = os.path.join(
-                    output_dir, f"checkpoint-{i-config.save_steps}"
+                    config.output_dir, f"checkpoint-{i-config.save_steps}"
                 )
                 os.system(f"rm -rf {prev_path}")
                 logger.debug(f"Deleted checkpoint {prev_path}")
 
         if i / config.accumulation_steps % config.total_steps == 0 and i > 0:
-            student_model.save_pretrained(os.path.join(output_dir, "final"))
-            logger.debug(f"Final model saved to {os.path.join(output_dir, 'final')}")
+            student_model.save_pretrained(os.path.join(config.output_dir, "final"))
+            logger.debug(
+                f"Final model saved to {os.path.join(config.output_dir, 'final')}"
+            )
             step_bar.update()
             break
 
