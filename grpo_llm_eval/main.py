@@ -36,7 +36,7 @@ async def main():
             f"{config.output_dir}/{datetime.now().strftime('%Y-%m-%d %H_%M_%S')}"
         )
     else:
-        output_dir = config.output_dir
+        config.output_dir = config.output_dir
 
     tokenizer, student_model = load_student_model(
         config, load_in_4bit=config.load_in_4bit
@@ -98,7 +98,7 @@ async def main():
             teacher_feedback,
             dataset["question"][index],
             student_responses,
-            output_dir,
+            config.output_dir,
             config,
         )
 
