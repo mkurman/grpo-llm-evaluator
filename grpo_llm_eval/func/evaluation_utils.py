@@ -71,7 +71,7 @@ async def evaluate_response(
                         ):
                             content = f"{config.think_open_string}\n{data['choices'][0]['message']['reasoning'].strip()}\n{config.think_close_string}\n"
 
-                        return f"{content}{data["choices"][0]["message"]["content"]}".strip()
+                        return f'{content}{data["choices"][0]["message"]["content"]}'.strip()
                     else:
                         logger.error(
                             f"OpenAI API request failed with status: {response.status}"
