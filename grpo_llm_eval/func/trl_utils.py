@@ -25,16 +25,12 @@ def get_per_token_logps(model, input_ids, attention_mask, logits_to_keep):
     logits = model(
         input_ids=input_ids,
         attention_mask=attention_mask,
-        logits_to_keep=logits_to_keep + 1,
-        return_dict=True,
+        # logits_to_keep=logits_to_keep + 1, # bug ???
+        # return_dict=True,
     ).logits  # (B, L, V)
-
-    if len(logits.shape) == 3:
-        logits = logits[
-            :, :-1, :
-        ]  # (B, L-1, V), exclude the last logit: it corresponds to the next token pred
-    else:
-        logits = logits.unsqueeze(1)
+    logits = logits[
+        :, :-1, :
+    ]  # (B, L-1, V), exclude the last logit: it corresponds to the next token pred
 
     input_ids = input_ids[:, -logits_to_keep:]
     # For transformers<=4.48, logits_to_keep argument isn't supported, so here we drop logits ourselves.
