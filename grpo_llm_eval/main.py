@@ -80,7 +80,7 @@ async def main():
 
     logger.debug("Starting training loop...")
 
-    total_steps = config.total_steps * config.accumulation_steps
+    total_steps = config.total_steps
 
     step_bar = tqdm(range(total_steps), total=total_steps, desc="Training", position=0)
 
@@ -117,6 +117,8 @@ async def main():
         # Gradient clipping
         torch.nn.utils.clip_grad_norm_(student_model.parameters(), config.max_grad_norm)
 
+        current_step = i // config.accumulation_steps
+
         if config.accumulation_steps == 1 or (
             i % config.accumulation_steps == 0 and i > 0
         ):
@@ -125,7 +127,7 @@ async def main():
             optimizer.zero_grad()
             torch.cuda.empty_cache()
 
-            step_bar.update(int(i / config.accumulation_steps) + 1)
+            step_bar.update(current_step + 1)
 
         step_bar.set_postfix(
             loss=loss.item(),
@@ -136,10 +138,10 @@ async def main():
             lr=scheduler.get_last_lr()[0],
         )
 
-        if i / config.accumulation_steps % config.save_steps == 0 and i > 0:
+        if current_step % config.save_steps == 0 and i > 0:
             student_dtype = student_model.config.torch_dtype
 
-            path = os.path.join(config.output_dir, f"checkpoint-{i}")
+            path = os.path.join(config.output_dir, f"checkpoint-{current_step}")
             accelerator.unwrap_model(student_model).save_pretrained(
                 path, state_dict=student_model.state_dict(), safe_serialization=True
             )
@@ -152,14 +154,14 @@ async def main():
             logger.debug(f"Model saved to {path}")
 
             # Delete previous checkpoints
-            if i / config.accumulation_steps > config.save_steps:
+            if current_step > config.save_steps:
                 prev_path = os.path.join(
-                    config.output_dir, f"checkpoint-{i-config.save_steps}"
+                    config.output_dir, f"checkpoint-{current_step - config.save_steps}"
                 )
                 os.system(f"rm -rf {prev_path}")
                 logger.debug(f"Deleted checkpoint {prev_path}")
 
-        if i / config.accumulation_steps % config.total_steps == 0 and i > 0:
+        if current_step % config.total_steps == 0 and i > 0:
             student_model.save_pretrained(os.path.join(config.output_dir, "final"))
             logger.debug(
                 f"Final model saved to {os.path.join(config.output_dir, 'final')}"
