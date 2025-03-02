@@ -11,6 +11,7 @@ from tqdm import tqdm
 from accelerate import Accelerator
 import asyncio
 import traceback
+import logging
 
 from grpo_llm_eval.func.model_utils import load_student_model, load_teacher_model
 from grpo_llm_eval.func.data_utils import load_dataset_function
@@ -24,11 +25,17 @@ import warnings
 
 warnings.filterwarnings("ignore")
 
+logging.basicConfig(level=logging.ERROR)
+
 logger = getLogger(__name__)
 
 
 async def main():
     args = parse_args()
+
+    if args.debug:
+        logger.setLevel(logging.DEBUG)
+
     config = load_config(args.config)
     current_date = datetime.now().strftime("%Y-%m-%d %H")
 

@@ -59,6 +59,12 @@ The primary goal of this project is to fine-tune a student LLM using feedback fr
     grpo_llm_eval --config configs/example.yaml
     ```
 
+    You can also use the `--debug` flag to enable debug mode for more detailed logging:
+
+    ```bash
+    grpo_llm_eval --config configs/example.yaml --debug
+    ```
+
 5.  **Use the Graphical Interface:**
 
     ```bash

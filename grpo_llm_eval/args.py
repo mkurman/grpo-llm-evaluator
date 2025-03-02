@@ -15,4 +15,9 @@ def parse_args():
         default="configs/example.yaml",
         help="Path to the configuration file",
     )
+    parser.add_argument(
+        "--debug",
+        action="store_true",
+        help="Enable debug mode",
+    )
     return parser.parse_args()
