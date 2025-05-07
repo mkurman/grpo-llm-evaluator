@@ -45,6 +45,8 @@ class TrainingConfig:
     """Top p value for sampling."""
     top_k: int = 50
     """Top k value for sampling."""
+    repetition_penalty: float = 1.1
+    """Repetition penalty for sampling."""
     max_seq_length: int = 4096
     """Maximum sequence length."""
     cache_dir: str = "~/.cache/"
@@ -83,6 +85,9 @@ class TrainingConfig:
     """String to indicate the start of the thought process."""
     think_close_string: str = "</think>"
     """String to indicate the end of the thought process."""
+
+    custom_model: Optional[str] = None
+    """Custom model to use for training."""
 
     def __post_init__(self):
         # Validate openai_base_url
@@ -155,6 +160,13 @@ class TrainingConfig:
         # Validate top_k
         if not isinstance(self.top_k, int) or self.top_k < 0:
             raise ValueError("top_k must be a non-negative integer")
+
+        # Validate repetition_penalty
+        if (
+            not isinstance(self.repetition_penalty, float)
+            or self.repetition_penalty < 0
+        ):
+            raise ValueError("repetition_penalty must be a non-negative float")
 
         # Validate max_seq_length
         if not isinstance(self.max_seq_length, int) or self.max_seq_length <= 0:

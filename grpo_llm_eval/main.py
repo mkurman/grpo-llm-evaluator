@@ -25,7 +25,7 @@ import warnings
 
 warnings.filterwarnings("ignore")
 
-logging.basicConfig(level=logging.ERROR)
+logging.basicConfig(level=logging.INFO)
 
 logger = getLogger(__name__)
 
@@ -77,10 +77,9 @@ async def main():
     student_model, ref_model, optimizer, dataset, scheduler = accelerator.prepare(
         student_model, ref_model, optimizer, dataset, scheduler
     )
+    total_steps = min(config.total_steps, len(dataset)) * config.accumulation_steps
 
-    logger.debug("Starting training loop...")
-
-    total_steps = config.total_steps
+    logger.debug(f"Starting training loop for {total_steps} steps...")
 
     step_bar = tqdm(range(total_steps), total=total_steps, desc="Training", position=0)
 
@@ -91,6 +90,9 @@ async def main():
     for i in range(total_steps):
         # Get data from dataset
         index = i % len(dataset)
+        logger.debug(
+            f"Generating response for {index} question {dataset['question'][index]}"
+        )
         student_responses = generate_response(
             student_model, tokenizer, dataset["question"][index], config
         )
@@ -127,8 +129,6 @@ async def main():
             optimizer.zero_grad()
             torch.cuda.empty_cache()
 
-            step_bar.update(1)
-
         step_bar.set_postfix(
             loss=loss.item(),
             reward=reward,
@@ -138,7 +138,7 @@ async def main():
             lr=scheduler.get_last_lr()[0],
         )
 
-        if current_step % config.save_steps == 0 and i > 0:
+        if i % config.save_steps == 0 and i > 0:
             student_dtype = student_model.config.torch_dtype
 
             path = os.path.join(config.output_dir, f"checkpoint-{current_step}")
@@ -161,13 +161,17 @@ async def main():
                 os.system(f"rm -rf {prev_path}")
                 logger.debug(f"Deleted checkpoint {prev_path}")
 
-        if current_step % config.total_steps == 0 and i > 0:
+        torch.cuda.empty_cache()
+
+        if current_step == config.total_steps:
             student_model.save_pretrained(os.path.join(config.output_dir, "final"))
             logger.debug(
                 f"Final model saved to {os.path.join(config.output_dir, 'final')}"
             )
             step_bar.update()
             break
+
+        step_bar.update()
 
 
 if __name__ == "__main__":

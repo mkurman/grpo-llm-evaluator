@@ -1,4 +1,4 @@
-from datasets import load_dataset
+from datasets import load_dataset, load_from_disk
 
 
 def load_dataset_function(config):
@@ -11,7 +11,10 @@ def load_dataset_function(config):
     Returns:
         Dataset: The loaded dataset.
     """
-    dataset = load_dataset(
-        config.dataset_name, split="train", cache_dir=config.cache_dir
-    )
+    try:
+        dataset = load_dataset(
+            config.dataset_name, split="train", cache_dir=config.cache_dir
+        )
+    except:
+        dataset = load_from_disk(config.dataset_name)
     return dataset
